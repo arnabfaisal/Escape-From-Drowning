@@ -1,1 +1,1 @@
-CSE423 --> Computer Graphics
+CSE423 --> Computer Graphics --> Using 3D template
