@@ -5,7 +5,7 @@ from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 
 # Camera-related variables
 camera_pos = (0,500,500)
-
+camera_angle=0
 fovY = 120  # Field of view
 GRID_LENGTH = 600  # Length of grid lines
 rand_var = 423
