@@ -11,7 +11,7 @@ camera_angle=0
 fovY = 120  # Field of view
 GRID_LENGTH = 600  # Length of grid lines
 rand_var = 423
-
+player_position =250 
 fpm = False
 ########################### SECTION FOR DECLARING VARIABLES #################################
 #p = player
