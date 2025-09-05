@@ -269,7 +269,7 @@ def mouseListener(button, state, x, y):
 def fpmChanger():
     x = px + 60*math.cos(math.radians(ptheta))
     y = py + 60*math.sin(math.radians(ptheta))
-    z = 100 
+    z = pz
 
     secondx = x + math.cos(math.radians(ptheta))
     secondy = y + math.sin(math.radians(ptheta))
