@@ -246,23 +246,13 @@ def specialKeyListener(key, x, y):
             angle_camera -= 360
 
 
-   
-
-   
-
     #camera_pos = (x, y, z)
     glutPostRedisplay()
 
 
 def mouseListener(button, state, x, y):
     global fpm
-    """
-    Handles mouse inputs for firing bullets (left click) and toggling camera mode (right click).
-    """
-        # # Left mouse button fires a bullet
-        # if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
-
-        # # Right mouse button toggles camera tracking mode
+    
     if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
         fpm = not fpm
     glutPostRedisplay()
@@ -270,10 +260,7 @@ def mouseListener(button, state, x, y):
 
 #def setupCamera():
     #global mode_camera, angle_camera, height_camera, px,py,pz, ptheta
-    """
-    Configures the camera's projection and view settings.
-    Uses a perspective projection and positions the camera to look at the target.
-    """
+   
     #glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
     #glLoadIdentity()  # Reset the projection matrix
     # Set up a perspective projection (field of view, aspect ratio, near clip, far clip)
