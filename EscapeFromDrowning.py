@@ -3,6 +3,8 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 
+import math
+
 # Camera-related variables
 camera_pos = (0,500,500)
 camera_angle=0
@@ -10,6 +12,12 @@ fovY = 120  # Field of view
 GRID_LENGTH = 600  # Length of grid lines
 rand_var = 423
 
+fpm = False
+########################### SECTION FOR DECLARING VARIABLES #################################
+#p = player
+px, py, ptheta = 0, 0, 0
+
+########################### DRAW TEXT #################################
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glColor3f(1,1,1)
@@ -36,29 +44,67 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
 
+########################## DRAW HERO ##############################
+def drawHero():
+    global px, py, ptheta
 
-def draw_shapes():
+    glPushMatrix()
+    glTranslatef(px, py, 0)
+    glRotatef(ptheta, 0, 0, 1)
 
-    glPushMatrix()  # Save the current matrix state
-    glColor3f(1, 0, 0)
-    glTranslatef(0, 0, 0)  
-    glutSolidCube(60) # Take cube size as the parameter
-    glTranslatef(0, 0, 100) 
-    glColor3f(0, 1, 0)
-    glutSolidCube(60) 
+    # Legs
+    glColor3f(0, 0, 1) 
+    
+    # Left leg
+    glPushMatrix()
+    glTranslatef(0, -20, 0) 
 
-    glColor3f(1, 1, 0)
-    glScalef(2, 2, 2)
-    gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)  # parameters are: quadric, base radius, top radius, height, slices, stacks
-    glTranslatef(100, 0, 100) 
-    glRotatef(90, 0, 1, 0)  # parameters are: angle, x, y, z
-    gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)
+    gluCylinder(gluNewQuadric(), 10, 30, 40, 10, 10)
+    glPopMatrix()
+    
+    # Right leg
+    glPushMatrix()
+    glTranslatef(0,20, 0)
 
-    glColor3f(0, 1, 1)
-    glTranslatef(300, 0, 100) 
-    gluSphere(gluNewQuadric(), 80, 10, 10)  # parameters are: quadric, radius, slices, stacks
+    gluCylinder(gluNewQuadric(), 10, 30, 40, 10, 10)
+    glPopMatrix()
 
-    glPopMatrix()  # Restore the previous matrix state
+    # Body
+    glPushMatrix()
+    glColor3f(2/255, 48/255, 32/255) 
+    glTranslatef(0, 0, 80)  
+    glutSolidCube(80)
+    glPopMatrix()
+
+    # Head
+    glPushMatrix()
+    glColor3f(0, 0, 0)  
+    glTranslatef(0, 0, 140)  
+    gluSphere(gluNewQuadric(), 20, 10, 10)  
+    glPopMatrix()
+
+    r,g,b = (255,224,196)
+    r = r/255
+    g = g/255
+    b = b/255
+    glColor3f(r,g,b)  
+
+    # First hand (right side)
+    glPushMatrix()
+    glTranslatef(40, -40, 80)  
+    glRotatef(90, 0, 1, 0)  
+    gluCylinder(gluNewQuadric(), 15, 5, 50, 10, 10) 
+    glPopMatrix()
+    
+    # Second hand (left side)
+    glPushMatrix()
+    glTranslatef(40, 40, 80)  
+    glRotatef(90, 0, 1, 0)  
+    gluCylinder(gluNewQuadric(), 15, 5, 50, 10, 10)  
+    glPopMatrix()
+
+
+    glPopMatrix()  
 
 
 def keyboardListener(key, x, y):
@@ -114,6 +160,7 @@ def specialKeyListener(key, x, y):
 
 
 def mouseListener(button, state, x, y):
+    global fpm
     """
     Handles mouse inputs for firing bullets (left click) and toggling camera mode (right click).
     """
@@ -121,7 +168,8 @@ def mouseListener(button, state, x, y):
         # if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
 
         # # Right mouse button toggles camera tracking mode
-        # if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
+    if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
+        fpm = not fpm
 
 
 def setupCamera():
@@ -142,6 +190,37 @@ def setupCamera():
     gluLookAt(x, y, z,  # Camera position
               0,0,0,  # Look-at target
               0, 0, 1)  # Up vector (z-axis)
+
+def fpmChanger():
+    x = px + 60*math.cos(math.radians(ptheta))
+    y = py + 60*math.sin(math.radians(ptheta))
+    z = 100 
+
+    secondx = x + math.cos(math.radians(ptheta))
+    secondy = y + math.sin(math.radians(ptheta))
+
+    gluLookAt(x, y, z,
+            secondx, secondy, z,
+            0, 0, 1)
+    
+def setupCamera():
+    global fpm, px, py, ptheta
+
+    glMatrixMode(GL_PROJECTION) 
+    glLoadIdentity()
+
+    gluPerspective(fovY, 1.25, 0.1, 1500) 
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+
+    if fpm == False:
+        x, y, z = camera_pos
+
+        gluLookAt(x, y, z,
+                0, 0, 0,  
+                0, 0, 1)  
+    else:
+        fpmChanger()
 
 
 
@@ -167,51 +246,11 @@ def showScreen():
 
     setupCamera()  # Configure camera perspective
 
-    # Draw a random points
-    glPointSize(20)
-    glBegin(GL_POINTS)
-    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
-    glEnd()
-    glPointSize(20)
-    glBegin(GL_POINTS)
-    glVertex3f(-600, 0, 0)
-    glEnd()
-
-
-
-    # Draw the grid (game floor)
-    glBegin(GL_QUADS)
-    
-    glColor3f(1, 1, 1)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
-
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
-
-
-    glColor3f(0.7, 0.5, 0.95)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-
-    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
-    glEnd()
 
     # Display game info text at a fixed screen position
     draw_text(10, 770, f"A Random Fixed Position Text")
     draw_text(10, 740, f"See how the position and variable change?: {rand_var}")
-
-    draw_shapes()
-
+    drawHero()
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
 
