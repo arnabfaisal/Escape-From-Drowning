@@ -6,16 +6,21 @@ from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 import math
 
 # Camera-related variables
+mode_camera = 0 
 camera_pos = (0,500,500)
-camera_angle=0
+angle_camera=0
+height_camera = 250
 fovY = 120  # Field of view
 GRID_LENGTH = 600  # Length of grid lines
 rand_var = 423
-player_position =250 
+
+
+SCALE_of_player= 0.6
+
 fpm = False
 ########################### SECTION FOR DECLARING VARIABLES #################################
 #p = player
-px, py, ptheta = 0, 0, 0
+px, py, pz, ptheta = 0, 0, 0,0
 
 ########################### DRAW TEXT #################################
 
@@ -137,9 +142,13 @@ def specialKeyListener(key, x, y):
     """
     Handles special key inputs (arrow keys) for adjusting the camera angle and height.
     """
-    global camera_pos, fovY
+    global camera_pos, fovY,angle_camera, mode_camera, height_camera
     x, y, z = camera_pos
+
+    s = 10  # height step
+    r_step = 3 # rotation step for camera
     # Move camera up (UP arrow key)
+
     if key == GLUT_KEY_UP:
         fovY += 1
 
@@ -148,15 +157,21 @@ def specialKeyListener(key, x, y):
         fovY -= 1
 
 
-    # moving camera left (LEFT arrow key)
-    if key == GLUT_KEY_LEFT:
-        z -= 1  # Small angle decrement for smooth movement
+   
+    # Rotate camera left (LEFT arrow key)
+    elif key == GLUT_KEY_LEFT:
+        angle_camera -= r_step
+        if angle_camera < 0:
+            angle_camera += 360  # wrap around
 
-    # moving camera right (RIGHT arrow key)
-    if key == GLUT_KEY_RIGHT:
-        z += 1  # Small angle increment for smooth movement
+    # Rotate camera right (RIGHT arrow key)
+    elif key == GLUT_KEY_RIGHT:
+        angle_camera += r_step
+        if angle_camera >= 360:
+            angle_camera -= 360  # wrap around
 
-    camera_pos = (x, y, z)
+    #camera_pos = (x, y, z)
+    glutPostRedisplay()
 
 
 def mouseListener(button, state, x, y):
@@ -170,9 +185,11 @@ def mouseListener(button, state, x, y):
         # # Right mouse button toggles camera tracking mode
     if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
         fpm = not fpm
+    glutPostRedisplay()
 
 
 def setupCamera():
+    global mode_camera, angle_camera, height_camera, px,py,pz, ptheta
     """
     Configures the camera's projection and view settings.
     Uses a perspective projection and positions the camera to look at the target.
@@ -185,12 +202,7 @@ def setupCamera():
     glLoadIdentity()  # Reset the model-view matrix
 
     #Extract camera position and look-at target
-    x, y, z = camera_pos
-    # Position the camera and set its orientation
-    gluLookAt(x, y, z,  # Camera position
-              0,0,0,  # Look-at target
-              0, 0, 1)  # Up vector (z-axis)
-
+   
 def fpmChanger():
     x = px + 60*math.cos(math.radians(ptheta))
     y = py + 60*math.sin(math.radians(ptheta))
@@ -204,7 +216,7 @@ def fpmChanger():
             0, 0, 1)
     
 def setupCamera():
-    global fpm, px, py, ptheta
+    global fpm, px, py,pz, ptheta,angle_camera,height_camera,camera_pos
 
     glMatrixMode(GL_PROJECTION) 
     glLoadIdentity()
@@ -213,15 +225,18 @@ def setupCamera():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    if fpm == False:
-        x, y, z = camera_pos
-
-        gluLookAt(x, y, z,
-                0, 0, 0,  
-                0, 0, 1)  
+    if not fpm:
+        # Third-person: Rotate around player
+        radius = 600
+        cam_x = px + radius * math.cos(math.radians(angle_camera))
+        cam_y = py + radius * math.sin(math.radians(angle_camera))
+        cam_z = pz+height_camera
+        gluLookAt(cam_x, cam_y, cam_z,
+                  px, py, pz+15,  # Look at player with z-offset
+                  0, 0, 1)
     else:
+        # First-person
         fpmChanger()
-
 
 
 def idle():
