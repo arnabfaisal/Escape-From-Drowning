@@ -23,8 +23,8 @@ fpm = False
 px, py, pz, ptheta = 0, 0,50.0,0
 player_velo_z=0.0
 gravity = 0.3
-j_p=15.0  #jump speed
-m_s= 5.0 #move speed 
+j_p=15.0  #player jump speed
+m_s= 5.0 #player move speed 
 on_ground=True
 
 # Game variables
@@ -41,10 +41,6 @@ platforms = [
     (250, -200, 300, 50),
     (-100, 300, 400, 40),
 ]
-
-
-
-
 
 
 ########################### DRAW TEXT #################################
@@ -79,7 +75,7 @@ def drawHero():
     global px, py, ptheta
 
     glPushMatrix()
-    glTranslatef(px, py, 0)
+    glTranslatef(px, py, pz)
     glRotatef(ptheta, 0, 0, 1)
 
     # Legs
@@ -416,10 +412,10 @@ def main():
     glutInitWindowSize(1000, 800)  # Window size
     glutInitWindowPosition(0, 0)  # Window position
     wind = glutCreateWindow(b"Michael Phelps RISING WATER ESCAPE")  # Create the window
-    glEnable(GL_DEPTH_TEST)
-    glEnable(GL_BLEND)
+    # glEnable(GL_DEPTH_TEST)
+    # glEnable(GL_BLEND)
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glutDisplayFunc(showScreen)  # Register display function
     glutKeyboardFunc(keyboardListener)  # Register keyboard listener
     glutSpecialFunc(specialKeyListener)
