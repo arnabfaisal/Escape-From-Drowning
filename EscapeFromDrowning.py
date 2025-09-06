@@ -2,7 +2,7 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
-
+import random
 import math
 
 # Camera-related variables
@@ -34,14 +34,20 @@ w_speed = 0.005 # water speed
 w_accel = 0.00000000002 # just to make the game playable
 score=0
 game_over = False
+max_p = 10   # max platform
+p_gap = 80  #platfrom gap
 platforms = [
     (0, 0, 0, 100),
-    (150, 100, 100, 80),
-    (-200, -150, 200, 60),
-    (250, -200, 300, 50),
-    (-100, 300, 400, 40),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 80, 80),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 160, 70),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 240, 60),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 320, 50),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 400, 50),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 480, 45),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 560, 45),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 640, 40),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 720, 40),
 ]
-
 
 ########################### DRAW TEXT #################################
 
@@ -135,7 +141,7 @@ def drawHero():
 
 def keyboardListener(key, x, y):
     """
-    Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
+    Handles keyboard inputs for player movement, camera updates
     """
     global px, py, ptheta, player_velo_z, pz, on_ground, w_z, w_speed, game_over,w_accel
     rad = math.radians(ptheta)
@@ -357,7 +363,7 @@ def showScreen():
     glEnd()
     for plat_x, plat_y, plat_z, plat_size in platforms:
         glPushMatrix()
-        glColor3f(0.5, 0.5, 0.5)
+        glColor3f(1, 0, 0)
         glTranslatef(plat_x, plat_y, plat_z)
         glutSolidCube(plat_size)
         glPopMatrix()
