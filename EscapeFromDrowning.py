@@ -11,7 +11,7 @@ camera_pos = (0,500,500)
 angle_camera=0
 height_camera = 250
 fovY = 120  # Field of view
-GRID_LENGTH = 1000  # Length of grid lines
+GRID_LENGTH = 1200  # Length of grid lines
 rand_var = 423
 r_step=5.0
 
@@ -146,26 +146,26 @@ def drawBoundary():
 
     glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
     glVertex3f(-GRID_LENGTH,  GRID_LENGTH, 0)
-    glVertex3f(-GRID_LENGTH,  GRID_LENGTH, w_z + 200)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, w_z + 200)
+    glVertex3f(-GRID_LENGTH,  GRID_LENGTH, 200)
+    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 200)
 
     glColor3f(0.2, 0.7, 0.6)
     glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
     glVertex3f(GRID_LENGTH,  GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH,  GRID_LENGTH, w_z + 200)
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, w_z + 200)
+    glVertex3f(GRID_LENGTH,  GRID_LENGTH, 200)
+    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 200)
 
     glColor3f(0.3, 0.3, 0.9)
     glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
     glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, GRID_LENGTH, w_z + 200)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, w_z + 200)
+    glVertex3f(GRID_LENGTH, GRID_LENGTH, 200)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 200)
 
     glColor3f(0.4, 0.9, 0.2)
     glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
     glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, w_z + 200)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, w_z +200)
+    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 200)
+    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 200)
 
     glEnd()
 
@@ -290,10 +290,10 @@ def specialKeyListener(key, x, y):
     
     if key == GLUT_KEY_UP:
         height_camera += 10
-        fovY += 3
+
     if key == GLUT_KEY_DOWN:
         height_camera -= 10
-        fovY -= 3
+
   
     if key == GLUT_KEY_LEFT:
         angle_camera -= r_step
@@ -347,7 +347,7 @@ def setupCamera():
         radius = 600
         cam_x = px + radius * math.cos(math.radians(angle_camera))
         cam_y = py + radius * math.sin(math.radians(angle_camera))
-        cam_z = height_camera
+        cam_z = pz + height_camera
         gluLookAt(cam_x, cam_y, cam_z,
                   px, py, pz+15,  # Look at player with z-offset
                   0, 0, 1)
