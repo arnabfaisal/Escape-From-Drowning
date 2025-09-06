@@ -28,7 +28,7 @@ m_s= .5 #player move speed
 on_ground=True
 
 # Game variables
-w_z = -100   # water_z
+w_z = -50   # water_z
 w_speed = 0.005 # water speed
 
 w_accel = 0.00000000002 # just to make the game playable
@@ -36,17 +36,18 @@ score=0
 game_over = False
 max_p = 10   # max platform
 p_gap = 80  #platfrom gap
+p_size=80
 platforms = [
     (0, 0, 0, 100),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 80, 80),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 160, 70),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 240, 60),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 320, 50),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 400, 50),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 480, 45),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 560, 45),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 640, 40),
-    (random.uniform(-100, 100), random.uniform(-100, 100), 720, 40),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 80, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 160, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 240, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 320, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 400, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 480, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 560, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 640, p_size),
+    (random.uniform(-100, 100), random.uniform(-100, 100), 720, p_size),
 ]
 
 ########################### DRAW TEXT #################################
