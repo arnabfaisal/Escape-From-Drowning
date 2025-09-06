@@ -31,7 +31,7 @@ on_ground=True
 w_z = -100   # water_z
 w_speed = 0.005 # water speed
 
-w_accel = 0.0 # just to make the game playable
+w_accel = 0.00000000002 # just to make the game playable
 score=0
 game_over = False
 
