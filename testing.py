@@ -22,9 +22,30 @@ fpm = False
 #p = player
 px, py, pz, ptheta = 0, 0,50.0,0
 player_velo_z=0.0
-gravity = .5
-j_p= 15.0  #player jump speed
+gravity = .7
+j_p= 12.0  #player jump speed
 m_s= .5 #player move speed 
+
+##################################### boxes ####################################
+p_gap = 90          # avg platform vertical gap
+P_MIN_SIZE = 90     # bigger platforms
+P_MAX_SIZE = 140
+
+SPAWN_XY_RANGE = 350   # how far from origin/platform column to spread
+MIN_PLAYER_DIST = 140  # don't spawn too close to player
+
+BONUS_CHANCE = 0.18    # 18% of spawns are bonus
+BONUS_COLOR = (1.0, 0.9, 0.2)
+NORMAL_COLOR = (1.0, 0.2, 0.2)
+
+
+######################### GAME STATES VAR ############################
+
+score = 0
+best_height = 0
+game_over = False
+max_p = 14            # allow more platforms in pool
+
 on_ground=True
 
 # Game variables
@@ -48,6 +69,42 @@ platforms = [
     (random.uniform(-100, 100), random.uniform(-100, 100), 640, 40),
     (random.uniform(-100, 100), random.uniform(-100, 100), 720, 40),
 ]
+
+
+# ======== PLATFORM HELPERS (add below your globals) ========
+def make_platform(z, avoid_x, avoid_y, is_bonus=False):
+    size = random.randint(P_MIN_SIZE, P_MAX_SIZE)
+    # ensure not too close to player
+    while True:
+        x = random.uniform(-SPAWN_XY_RANGE, SPAWN_XY_RANGE)
+        y = random.uniform(-SPAWN_XY_RANGE, SPAWN_XY_RANGE)
+        if math.hypot(x - avoid_x, y - avoid_y) >= MIN_PLAYER_DIST:
+            break
+    color = BONUS_COLOR if is_bonus else NORMAL_COLOR
+    return {
+        "x": x, "y": y, "z": z, "size": size,
+        "bonus": is_bonus, "visited": False, "color": color
+    }
+
+def init_platforms():
+    plats = []
+    # a roomy ground block
+    plats.append({"x": 0, "y": 0, "z": 0, "size": 220, "bonus": False, "visited": False, "color": (0.6, 0.6, 0.6)})
+    # a vertical “staircase” of random platforms
+    z = 80
+    for _ in range(9):
+        is_bonus = (random.random() < BONUS_CHANCE)
+        plats.append(make_platform(z, 0, 0, is_bonus))
+        z += p_gap + random.uniform(-20, 20)
+    return plats
+
+platforms = init_platforms()
+
+
+
+
+
+
 
 ########################### DRAW TEXT #################################
 
@@ -207,7 +264,7 @@ def keyboardListener(key, x, y):
         player_velo_z = 0
         on_ground = True
         w_z = -100
-        w_s = 0.005
+        w_speed = 0.005
         w_accel = 0.0
         game_over = False
         global angle_camera, fovY
@@ -236,6 +293,49 @@ def keyboardUpListener(key, x, y):
         mv_sr = False
         
     glutPostRedisplay()
+
+# ======== PLATFORM SUPPORT & SPAWNING (NEW) ========
+def platform_top_if_supported(x, y, z):
+    """
+    Returns (is_supported, plat_index, top_z) for platform directly under (x,y)
+    where current z is above top and within bounds.
+    """
+    for i, p in enumerate(platforms):
+        half = p["size"] * 0.5
+        if (p["x"] - half <= x <= p["x"] + half and
+            p["y"] - half <= y <= p["y"] + half):
+            top = p["z"] + half
+            return True, i, top
+    return False, -1, 0.0
+
+def highest_platform_z():
+    return max(p["z"] + p["size"] * 0.5 for p in platforms)
+
+def prune_old_platforms(water_z):
+    # remove platforms far below water to keep list short
+    keep = []
+    cutoff = water_z - 200
+    for p in platforms:
+        if p["z"] + p["size"] * 0.5 >= cutoff:
+            keep.append(p)
+    return keep
+
+def maybe_spawn_more():
+    # keep future platforms ahead of player/top
+    global platforms
+    top = highest_platform_z()
+    # Spawn until we have max_p platforms OR until the top is far enough ahead
+    while len(platforms) < max_p and top < pz + 700:
+        top += p_gap + random.uniform(-20, 25)
+        is_bonus = (random.random() < BONUS_CHANCE)
+        platforms.append(make_platform(top, px, py, is_bonus))
+
+
+
+
+
+
+
 
 def changing_position_smoothly():
     global px, py, ptheta, mv_w, mv_s, mv_l, mv_r, mv_sl, mv_sr, m_s
@@ -345,7 +445,7 @@ def setupCamera():
         radius = 600
         cam_x = px + radius * math.cos(math.radians(angle_camera))
         cam_y = py + radius * math.sin(math.radians(angle_camera))
-        cam_z = height_camera
+        cam_z = pz + height_camera
         gluLookAt(cam_x, cam_y, cam_z,
                   px, py, pz+15,  # Look at player with z-offset
                   0, 0, 1)
@@ -354,100 +454,212 @@ def setupCamera():
         fpmChanger()
 
 
+# ======== IDLE: physics, collisions, scoring, spawning ========
 def idle():
-    """
-    Idle function that runs continuously:
-    - Triggers screen redraw for real-time updates.
-    """
-    # Ensure the screen updates with the latest changes
-    global player_velo_z, pz, on_ground, w_z, w_speed, game_over,score
-    changing_position_smoothly()
+    global player_velo_z, pz, on_ground, w_z, w_speed, game_over, score, best_height, platforms
+
     if game_over:
         glutPostRedisplay()
         return
-    old_pz=pz
-    player_velo_z -= gravity
-    pz += player_velo_z
-    
+
+    changing_position_smoothly()
+
+    # Determine if player is still supported after horizontal move
+    supported, sup_i, sup_top = platform_top_if_supported(px, py, pz)
     if on_ground:
-       for plat_x, plat_y, plat_z, plat_size in platforms:
-            half_size = plat_size / 2
-            plat_top = plat_z + half_size
-            if (plat_x - half_size <= px <= plat_x + half_size and
-                plat_y - half_size <= py <= plat_y + half_size and
-                pz < plat_top):
-                pz = plat_top
-                player_velo_z = 0
-                on_ground = True
-                break
-    else:
-       for plat_x, plat_y, plat_z, plat_size in platforms:
-            half_size = plat_size / 2
-            plat_top = plat_z + half_size
-            if (plat_x - half_size <= px <= plat_x + half_size and
-                plat_y - half_size <= py <= plat_y + half_size and
-                old_pz >= plat_top and
-                pz < plat_top and
-                player_velo_z <= 0):
-                pz = plat_top
-                player_velo_z = 0
-                on_ground = True
-                break
-   
-    # not falling below ground
+        # If we walked off the platform bounds, start falling
+        if not supported or pz > sup_top + 0.5:
+            on_ground = False
+        else:
+            # stay glued to top
+            pz = sup_top
+            player_velo_z = 0.0
+
+    if not on_ground:
+        old_pz = pz
+        player_velo_z -= gravity
+        pz += player_velo_z
+
+        # Landing check: descending through a top surface within bounds
+        landed, li, ltop = platform_top_if_supported(px, py, old_pz)
+        if landed and old_pz >= ltop and pz <= ltop and player_velo_z <= 0.0:
+            pz = ltop
+            player_velo_z = 0.0
+            on_ground = True
+
+            # SCORING on first touch
+            plat = platforms[li]
+            if not plat["visited"]:
+                plat["visited"] = True
+                score += 10 if plat["bonus"] else 1
+
+    # Keep above ground plane
     if pz < 0:
         pz = 0
         player_velo_z = 0
         on_ground = True
+
+    # Water progresses
     w_z += w_speed
     w_speed += w_accel
+
     if pz <= w_z:
         game_over = True
+
+    # Height best for HUD
+    best_height = max(best_height, int(math.ceil(pz)))
+
+    # Spawn / prune platforms over time
+    platforms = prune_old_platforms(w_z)
+    maybe_spawn_more()
+
     glutPostRedisplay()
+
+
+
+
+
+
+# def idle():
+#     """
+#     Idle function that runs continuously:
+#     - Triggers screen redraw for real-time updates.
+#     """
+#     # Ensure the screen updates with the latest changes
+#     global player_velo_z, pz, on_ground, w_z, w_speed, game_over,score
+#     changing_position_smoothly()
+#     if game_over:
+#         glutPostRedisplay()
+#         return
+#     old_pz=pz
+#     player_velo_z -= gravity
+#     pz += player_velo_z
+    
+#     if on_ground:
+#        for plat_x, plat_y, plat_z, plat_size in platforms:
+#             half_size = plat_size / 2
+#             plat_top = plat_z + half_size
+#             if (plat_x - half_size <= px <= plat_x + half_size and
+#                 plat_y - half_size <= py <= plat_y + half_size and
+#                 pz < plat_top):
+#                 pz = plat_top
+#                 player_velo_z = 0
+#                 on_ground = True
+#                 break
+#     else:
+#        for plat_x, plat_y, plat_z, plat_size in platforms:
+#             half_size = plat_size / 2
+#             plat_top = plat_z + half_size
+#             if (plat_x - half_size <= px <= plat_x + half_size and
+#                 plat_y - half_size <= py <= plat_y + half_size and
+#                 old_pz >= plat_top and
+#                 pz < plat_top and
+#                 player_velo_z <= 0):
+#                 pz = plat_top
+#                 player_velo_z = 0
+#                 on_ground = True
+#                 break
+   
+#     # not falling below ground
+#     if pz < 0:
+#         pz = 0
+#         player_velo_z = 0
+#         on_ground = True
+#     w_z += w_speed
+#     w_speed += w_accel
+#     if pz <= w_z:
+#         game_over = True
+#     glutPostRedisplay()
 
   
-    #glutPostRedisplay()
-    score = max(score, int(pz))
-    glutPostRedisplay()
+#     #glutPostRedisplay()
+#     score = max(score, int(pz))
+#     glutPostRedisplay()
 
-
+# ======== RENDER: draw platforms with their own colors & improved HUD ========
 def showScreen():
-    """
-    Display function to render the game scene:
-    - Clears the screen and sets up the camera.
-    - Draws everything of the screen
-    """
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     glViewport(0, 0, 1000, 800)
     setupCamera()
 
-    
+    # water
     glBegin(GL_QUADS)
-    glColor4f(0.0, 0.5, 1.0, 0.8)  # Blue water
+    glColor4f(0.0, 0.5, 1.0, 0.8)
     glVertex3f(-1000, -1000, w_z)
     glVertex3f(1000, -1000, w_z)
     glVertex3f(1000, 1000, w_z)
     glVertex3f(-1000, 1000, w_z)
     glEnd()
 
-    for plat_x, plat_y, plat_z, plat_size in platforms:
+    # platforms
+    for p in platforms:
         glPushMatrix()
-        glColor3f(1, 0, 0)
-        glTranslatef(plat_x, plat_y, plat_z)
-        glutSolidCube(plat_size)
+        glColor3f(*p["color"])
+        glTranslatef(p["x"], p["y"], p["z"])
+        glutSolidCube(p["size"])
         glPopMatrix()
-    
+
     drawBoundary()
     drawHero()
+
+    # HUD
     draw_text(10, 770, f"Player Height: {pz:.1f}")
     draw_text(10, 740, f"Water Level: {w_z:.1f}")
     draw_text(10, 710, f"Player Angle: {ptheta:.1f}")
-    draw_text(10, 680, f"Score: {score}")
+    draw_text(10, 680, f"Score: {score}   Best Height: {best_height}")
+    draw_text(10, 650, f"Tip: bonus blocks are golden! (+10)")
+
     if game_over:
-        draw_text(400, 400, "Game Over - Press R to Restart")
+        draw_text(340, 420, "Game Over")
+        draw_text(270, 380, "Press R to Restart (score resets)")
+
     glutSwapBuffers()
+
+
+
+
+
+
+
+
+# def showScreen():
+#     """
+#     Display function to render the game scene:
+#     - Clears the screen and sets up the camera.
+#     - Draws everything of the screen
+#     """
+
+#     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+#     glLoadIdentity()
+#     glViewport(0, 0, 1000, 800)
+#     setupCamera()
+
+    
+#     glBegin(GL_QUADS)
+#     glColor4f(0.0, 0.5, 1.0, 0.8)  # Blue water
+#     glVertex3f(-1000, -1000, w_z)
+#     glVertex3f(1000, -1000, w_z)
+#     glVertex3f(1000, 1000, w_z)
+#     glVertex3f(-1000, 1000, w_z)
+#     glEnd()
+
+#     for plat_x, plat_y, plat_z, plat_size in platforms:
+#         glPushMatrix()
+#         glColor3f(1, 0, 0)
+#         glTranslatef(plat_x, plat_y, plat_z)
+#         glutSolidCube(plat_size)
+#         glPopMatrix()
+    
+#     drawBoundary()
+#     drawHero()
+#     draw_text(10, 770, f"Player Height: {pz:.1f}")
+#     draw_text(10, 740, f"Water Level: {w_z:.1f}")
+#     draw_text(10, 710, f"Player Angle: {ptheta:.1f}")
+#     draw_text(10, 680, f"Score: {score}")
+#     if game_over:
+#         draw_text(400, 400, "Game Over - Press R to Restart")
+#     glutSwapBuffers()
 
 
 # Main function to set up OpenGL window and loop
