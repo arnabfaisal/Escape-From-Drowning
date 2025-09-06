@@ -91,28 +91,28 @@ def drawHero():
     glPushMatrix()
     glTranslatef(0, -20, 0) 
 
-    gluCylinder(gluNewQuadric(), 10, 30, 40, 10, 10)
+    gluCylinder(gluNewQuadric(), 10, 15, 60, 10, 10)
     glPopMatrix()
     
     # Right leg
     glPushMatrix()
     glTranslatef(0,20, 0)
 
-    gluCylinder(gluNewQuadric(), 10, 30, 40, 10, 10)
+    gluCylinder(gluNewQuadric(), 10, 15, 60, 10, 10)
     glPopMatrix()
 
     # Body
     glPushMatrix()
     glColor3f(2/255, 48/255, 32/255) 
     glTranslatef(0, 0, 80)  
-    glutSolidCube(80)
+    glutSolidCube(60)
     glPopMatrix()
 
     # Head
     glPushMatrix()
-    glColor3f(0, 0, 0)  
-    glTranslatef(0, 0, 140)  
-    gluSphere(gluNewQuadric(), 20, 10, 10)  
+    glColor3f(1, 1, 1)  
+    glTranslatef(0, 0, 130)  
+    gluSphere(gluNewQuadric(), 15, 10, 10)  
     glPopMatrix()
 
     r,g,b = (255,224,196)
@@ -146,26 +146,26 @@ def drawBoundary():
 
     glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
     glVertex3f(-GRID_LENGTH,  GRID_LENGTH, 0)
-    glVertex3f(-GRID_LENGTH,  GRID_LENGTH, w_z + 100)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, w_z + 100)
+    glVertex3f(-GRID_LENGTH,  GRID_LENGTH, w_z + 200)
+    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, w_z + 200)
 
     glColor3f(0.2, 0.7, 0.6)
     glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
     glVertex3f(GRID_LENGTH,  GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH,  GRID_LENGTH, w_z + 100)
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, w_z + 100)
+    glVertex3f(GRID_LENGTH,  GRID_LENGTH, w_z + 200)
+    glVertex3f(GRID_LENGTH, -GRID_LENGTH, w_z + 200)
 
     glColor3f(0.3, 0.3, 0.9)
     glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
     glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, GRID_LENGTH, w_z + 100)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, w_z + 100)
+    glVertex3f(GRID_LENGTH, GRID_LENGTH, w_z + 200)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, w_z + 200)
 
     glColor3f(0.4, 0.9, 0.2)
     glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
     glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, w_z + 100)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, w_z + 100)
+    glVertex3f(GRID_LENGTH, -GRID_LENGTH, w_z + 200)
+    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, w_z +200)
 
     glEnd()
 
@@ -269,8 +269,7 @@ def specialKeyListener(key, x, y):
     """
     Handles special key inputs (arrow keys) for adjusting the camera angle and height.
     """
-    global camera_pos, fovY,angle_camera, mode_camera, height_camera,px, py, ptheta, player_velo_z, pz, on_ground, w_z, w_speed, game_over
-    #x, y, z = camera_pos
+    global camera_pos, fovY,angle_camera, mode_camera, height_camera,px, py, ptheta, player_velo_z, pz, on_ground, w_z, w_speed, game_over, cam_z
 
     s = 10  # height step
     r_step = 3 # rotation step for camera
@@ -290,9 +289,9 @@ def specialKeyListener(key, x, y):
     rad = math.radians(ptheta)
     
     if key == GLUT_KEY_UP:
-        fovY += 1
+        height_camera += 10
     if key == GLUT_KEY_DOWN:
-        fovY -= 1
+        height_camera -= 10
   
     if key == GLUT_KEY_LEFT:
         angle_camera -= r_step
@@ -303,8 +302,6 @@ def specialKeyListener(key, x, y):
         if angle_camera >= 360:
             angle_camera -= 360
 
-
-    #camera_pos = (x, y, z)
     glutPostRedisplay()
 
 
@@ -328,13 +325,18 @@ def fpmChanger():
             secondx, secondy, z,
             0, 0, 1)
     
+
+
+cam_x = 0
+cam_y = 0
+cam_z = 0
 def setupCamera():
-    global fpm, px, py,pz, ptheta,angle_camera,height_camera,camera_pos
+    global fpm, px, py,pz, ptheta,angle_camera,height_camera,cam_x, cam_y, cam_z
 
     glMatrixMode(GL_PROJECTION) 
     glLoadIdentity()
 
-    gluPerspective(fovY, 1.25, 0.1, 1500) 
+    gluPerspective(fovY, 1.25, 0.1, 2000) 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
@@ -415,20 +417,7 @@ def showScreen():
     - Clears the screen and sets up the camera.
     - Draws everything of the screen
     """
-    # Clear color and depth buffers
-    #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    #glLoadIdentity()  # Reset modelview matrix
-    #glViewport(0, 0, 1000, 800)  # Set viewport size
 
-    #setupCamera()  # Configure camera perspective
-
-
-    # Display game info text at a fixed screen position
-    #draw_text(10, 770, f"A Random Fixed Position Text")
-    #draw_text(10, 740, f"See how the position and variable change?: {rand_var}")
-    #drawHero()
-    # Swap buffers for smooth rendering (double buffering)
-    #glutSwapBuffers()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     glViewport(0, 0, 1000, 800)
