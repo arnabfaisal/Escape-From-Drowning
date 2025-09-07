@@ -70,7 +70,17 @@ platforms = [
     (random.uniform(-100, 100), random.uniform(-100, 100), 720, p_size),
 ]
 
-
+COLOR_PALETTE = [
+    (1.0, 0.2, 0.2),   # Red
+    (0.2, 0.8, 0.2),   # Green
+    (0.2, 0.2, 1.0),   # Blue
+    (0.8, 0.2, 1.0),   # Purple
+    (0.2, 1.0, 0.8),   # Teal
+    (1.0, 0.5, 0.0),   # Orange
+    (0.5, 0.5, 0.5),   # Gray
+    (0.8, 0.6, 0.4),   # Tan
+    (0.4, 0.8, 0.6)    # Mint
+]
 
 # ======== PLATFORM HELPER FUNCTIONS ========
 def make_platform(z, base_x, base_y, is_bonus=False):
@@ -86,7 +96,7 @@ def make_platform(z, base_x, base_y, is_bonus=False):
     if is_bonus:
         color = BONUS_COLOR
     else:
-        color = (random.random(), random.random(), random.random())
+        color = random.choice(COLOR_PALETTE) 
 
     return {
         "x": x, "y": y, "z": z, "size": size,
@@ -379,21 +389,22 @@ def maybe_spawn_more():
         max_jump_height = j_p * 3
 
         # Bigger, more natural vertical gaps (100–160)
-        vertical_gap = random.uniform(100, 160)
+        vertical_gap = random.uniform(100, 260)
         top += min(vertical_gap, max_jump_height)
 
-        # Main guaranteed platform
+        # Main guaranteed platforms
         main_plat = make_platform(top, last_x, last_y)
         platforms.append(main_plat)
 
-        # Only sometimes shift base → prevents “cluster piles”
-        if random.random() < 0.6:
-            last_x, last_y = main_plat["x"], main_plat["y"]
+        # ALWAYS update base coordinates to prevent clustering
+        last_x, last_y = main_plat["x"], main_plat["y"]
 
         # Bonus platform (rare & scattered wider)
         if random.random() < BONUS_CHANCE * 0.5:
             bonus = make_platform(top, last_x, last_y, is_bonus=True)
             platforms.append(bonus)
+
+
 
 
 def specialKeyListener(key, x, y):
@@ -404,18 +415,7 @@ def specialKeyListener(key, x, y):
 
     s = 10  # height step
     r_step = 3 # rotation step for camera
-    # Move camera up (UP arrow key)
 
-    #if key == GLUT_KEY_UP:
-        #fovY += 1
-
-    # # Move camera down (DOWN arrow key)
-    #if key == GLUT_KEY_DOWN:
-        #fovY -= 1
-    #if key == GLUT_KEY_LEFT:
-       # px -= m_s
-    #if key == GLUT_KEY_RIGHT:
-       # px += m_s
 
     rad = math.radians(ptheta)
     
@@ -452,7 +452,7 @@ def fpmChanger():
 
     cam_x = px - distance * math.cos(math.radians(ptheta))
     cam_y = py - distance * math.sin(math.radians(ptheta))
-    cam_z = pz + height
+    cam_z = pz + height + 200
 
     gluLookAt(cam_x, cam_y, cam_z,
               px, py, pz + 30,  # Look at player's upper body
@@ -537,8 +537,6 @@ def idle():
     if pz <= w_z:
         game_over = True
 
-    # Height best for HUD
-    best_height = max(best_height, int(math.ceil(pz)))
 
     # Spawn / prune platforms over time
     platforms = prune_old_platforms(w_z)
@@ -581,8 +579,10 @@ def showScreen():
     draw_text(10, 740, f"Water Level: {w_z:.1f}")
     draw_text(10, 710, f"Player Angle: {ptheta:.1f}")
     draw_text(10, 680, f"Score: {score}")
+    draw_text(10, 650, f"Tip: bonus blocks are golden! (+10)")
+
     if game_over:
-        draw_text(400, 400, "Game Over - Press R to Restart")
+        draw_text(400, 400, "Game Over- bachao bachao swimming pari na - Press R to Restart")
     glutSwapBuffers()
 
 
@@ -593,10 +593,7 @@ def main():
     glutInitWindowSize(1000, 800)  # Window size
     glutInitWindowPosition(0, 0)  # Window position
     wind = glutCreateWindow(b"Michael Phelps RISING WATER ESCAPE")  # Create the window
-    # glEnable(GL_DEPTH_TEST)
-    # glEnable(GL_BLEND)
 
-    # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glutDisplayFunc(showScreen)  # Register display function
     glutKeyboardFunc(keyboardListener)  # Register keyboard listener
     glutKeyboardUpFunc(keyboardUpListener)  # Register key up listener
