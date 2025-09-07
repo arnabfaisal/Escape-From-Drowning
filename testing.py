@@ -22,7 +22,7 @@ fpm = False
 #p = player
 px, py, pz, ptheta = 0, 0,50.0,0
 player_velo_z=0.0
-gravity = .7
+gravity = .15
 j_p= 12.0  #player jump speed
 m_s= .5 #player move speed 
 
@@ -31,7 +31,7 @@ p_gap = 90          # avg platform vertical gap
 P_MIN_SIZE = 90     # bigger platforms
 P_MAX_SIZE = 140
 
-SPAWN_XY_RANGE = 350   # how far from origin/platform column to spread
+SPAWN_XY_RANGE = 140   # how far from origin/platform column to spread
 MIN_PLAYER_DIST = 140  # don't spawn too close to player
 
 BONUS_CHANCE = 0.18    # 18% of spawns are bonus
@@ -72,38 +72,51 @@ platforms = [
 
 
 # ======== PLATFORM HELPERS (add below your globals) ========
-def make_platform(z, avoid_x, avoid_y, is_bonus=False):
+def make_platform(z, base_x, base_y, is_bonus=False):
+    """Spawn a platform with balanced randomness (not too clustered)."""
     size = random.randint(P_MIN_SIZE, P_MAX_SIZE)
-    # ensure not too close to player
-    while True:
-        x = random.uniform(-SPAWN_XY_RANGE, SPAWN_XY_RANGE)
-        y = random.uniform(-SPAWN_XY_RANGE, SPAWN_XY_RANGE)
-        if math.hypot(x - avoid_x, y - avoid_y) >= MIN_PLAYER_DIST:
-            break
-    color = BONUS_COLOR if is_bonus else NORMAL_COLOR
+
+    # Horizontal spread: wide enough to look random, but not too far
+    spread = 120 if not is_bonus else 180
+    x = base_x + random.uniform(-spread, spread)
+    y = base_y + random.uniform(-spread, spread)
+
+    # Random colors
+    if is_bonus:
+        color = BONUS_COLOR
+    else:
+        color = (random.random(), random.random(), random.random())
+
     return {
         "x": x, "y": y, "z": z, "size": size,
         "bonus": is_bonus, "visited": False, "color": color
     }
 
 def init_platforms():
+    """Initialize the starting ground and first staircase of platforms."""
     plats = []
-    # a roomy ground block
-    plats.append({"x": 0, "y": 0, "z": 0, "size": 220, "bonus": False, "visited": False, "color": (0.6, 0.6, 0.6)})
-    # a vertical “staircase” of random platforms
+    # Big starting ground
+    plats.append({"x": 0, "y": 0, "z": 0, "size": 220,
+                  "bonus": False, "visited": False, "color": (0.6, 0.6, 0.6)})
+
+    # Start a staircase upward
     z = 80
+    last_x, last_y = 0, 0
     for _ in range(9):
         is_bonus = (random.random() < BONUS_CHANCE)
-        plats.append(make_platform(z, 0, 0, is_bonus))
-        z += p_gap + random.uniform(-20, 20)
+        new_plat = make_platform(z, last_x, last_y, is_bonus)
+        plats.append(new_plat)
+
+        # update base for next step (main path always reachable)
+        last_x, last_y = new_plat["x"], new_plat["y"]
+
+        # keep vertical gap within jumpable range
+        max_jump_height = j_p * 3   # safe max
+        z += min(p_gap + random.uniform(-10, 10), max_jump_height)
+
     return plats
 
 platforms = init_platforms()
-
-
-
-
-
 
 
 ########################### DRAW TEXT #################################
@@ -297,16 +310,19 @@ def keyboardUpListener(key, x, y):
 # ======== PLATFORM SUPPORT & SPAWNING (NEW) ========
 def platform_top_if_supported(x, y, z):
     """
-    Returns (is_supported, plat_index, top_z) for platform directly under (x,y)
-    where current z is above top and within bounds.
+    Returns (is_supported, plat_index, top_z) if the player is within a platform's X/Y
+    and near its top surface.
     """
     for i, p in enumerate(platforms):
         half = p["size"] * 0.5
         if (p["x"] - half <= x <= p["x"] + half and
             p["y"] - half <= y <= p["y"] + half):
             top = p["z"] + half
-            return True, i, top
+            # Only allow support if player is above or slightly below top
+            if z >= top - 5.0:  
+                return True, i, top
     return False, -1, 0.0
+
 
 def highest_platform_z():
     return max(p["z"] + p["size"] * 0.5 for p in platforms)
@@ -321,21 +337,30 @@ def prune_old_platforms(water_z):
     return keep
 
 def maybe_spawn_more():
-    # keep future platforms ahead of player/top
+    """Spawn platforms with fair gaps and less clustering."""
     global platforms
     top = highest_platform_z()
-    # Spawn until we have max_p platforms OR until the top is far enough ahead
-    while len(platforms) < max_p and top < pz + 700:
-        top += p_gap + random.uniform(-20, 25)
-        is_bonus = (random.random() < BONUS_CHANCE)
-        platforms.append(make_platform(top, px, py, is_bonus))
+    last_x, last_y = platforms[-1]["x"], platforms[-1]["y"]
 
+    while top < pz + 500:
+        max_jump_height = j_p * 3
 
+        # Bigger, more natural vertical gaps (100–160)
+        vertical_gap = random.uniform(100, 160)
+        top += min(vertical_gap, max_jump_height)
 
+        # Main guaranteed platform
+        main_plat = make_platform(top, last_x, last_y)
+        platforms.append(main_plat)
 
+        # Only sometimes shift base → prevents “cluster piles”
+        if random.random() < 0.6:
+            last_x, last_y = main_plat["x"], main_plat["y"]
 
-
-
+        # Bonus platform (rare & scattered wider)
+        if random.random() < BONUS_CHANCE * 0.5:
+            bonus = make_platform(top, last_x, last_y, is_bonus=True)
+            platforms.append(bonus)
 
 def changing_position_smoothly():
     global px, py, ptheta, mv_w, mv_s, mv_l, mv_r, mv_sl, mv_sr, m_s
@@ -412,20 +437,20 @@ def mouseListener(button, state, x, y):
         fpm = not fpm
     glutPostRedisplay()
 
-   
 def fpmChanger():
-    x = px + 60*math.cos(math.radians(ptheta))
-    y = py + 60*math.sin(math.radians(ptheta))
-    z = pz
-
-    secondx = x + math.cos(math.radians(ptheta))
-    secondy = y + math.sin(math.radians(ptheta))
-
-    gluLookAt(x, y, z,
-            secondx, secondy, z,
-            0, 0, 1)
+    # Traditional third-person view
+    distance = 200
+    height = 100
     
-
+    cam_x = px - distance * math.cos(math.radians(ptheta))
+    cam_y = py - distance * math.sin(math.radians(ptheta))
+    cam_z = pz + height
+    
+    # Look directly at player
+    gluLookAt(cam_x, cam_y, cam_z,
+              px, py, pz + 30,  # Look at player's upper body
+              0, 0, 1)
+    
 
 cam_x = 0
 cam_y = 0
