@@ -317,18 +317,17 @@ def mouseListener(button, state, x, y):
 
    
 def fpmChanger():
-    x = px + 60*math.cos(math.radians(ptheta))
-    y = py + 60*math.sin(math.radians(ptheta))
-    z = pz
+    distance = 200
+    height = 100
 
-    secondx = x + math.cos(math.radians(ptheta))
-    secondy = y + math.sin(math.radians(ptheta))
+    cam_x = px - distance * math.cos(math.radians(ptheta))
+    cam_y = py - distance * math.sin(math.radians(ptheta))
+    cam_z = pz + height
 
-    gluLookAt(x, y, z,
-            secondx, secondy, z,
-            0, 0, 1)
+    gluLookAt(cam_x, cam_y, cam_z,
+              px, py, pz + 30,  # Look at player's upper body
+              0, 0, 1)
     
-
 
 cam_x = 0
 cam_y = 0
