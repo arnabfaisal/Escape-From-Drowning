@@ -71,15 +71,15 @@ platforms = [
 ]
 
 COLOR_PALETTE = [
-    (1.0, 0.2, 0.2),   # Red
-    (0.2, 0.8, 0.2),   # Green
-    (0.2, 0.2, 1.0),   # Blue
-    (0.8, 0.2, 1.0),   # Purple
-    (0.2, 1.0, 0.8),   # Teal
-    (1.0, 0.5, 0.0),   # Orange
-    (0.5, 0.5, 0.5),   # Gray
-    (0.8, 0.6, 0.4),   # Tan
-    (0.4, 0.8, 0.6)    # Mint
+    (1.0, 0.2, 0.2), 
+    (0.2, 0.8, 0.2),  
+    (0.2, 0.2, 1.0), 
+    (0.8, 0.2, 1.0),  
+    (0.2, 1.0, 0.8),
+    (1.0, 0.5, 0.0), 
+    (0.5, 0.5, 0.5),
+    (0.8, 0.6, 0.4),
+    (0.4, 0.8, 0.6)  
 ]
 
 # ======== PLATFORM HELPER FUNCTIONS ========
@@ -352,10 +352,7 @@ def changing_position_smoothly():
 
 
 def isItOnTop(x, y, z):
-    """
-    Returns (is_supported, plat_index, top_z) if the player is within a platform's X/Y
-    and near its top surface.
-    """
+
     for i, p in enumerate(platforms):
         half = p["size"] * 0.5
         if (p["x"] - half <= x <= p["x"] + half and
@@ -374,7 +371,7 @@ def deleteDrownedPlatforms(water_z):
     # remove platforms far below water to keep list short
     keep = []
     cutoff = water_z - 200
-    for p in platforms:
+    for p in platforms: 
         if p["z"] + p["size"] * 0.5 >= cutoff:
             keep.append(p)
     return keep
