@@ -38,6 +38,7 @@ MIN_PLAYER_DIST = 140  # don't spawn too close to player
 BONUS_CHANCE = 0.18    # 18% of spawns are bonus
 BONUS_COLOR = (1.0, 0.9, 0.2)
 NORMAL_COLOR = (1.0, 0.2, 0.2)
+
 ######################### GAME STATES VAR ############################
 
 score = 0
@@ -47,7 +48,7 @@ max_p = 14            # allow more platforms in pool
 
 on_ground=True
 
-# Game variables
+# Game variables  water level function
 w_z = -50   # water_z
 w_speed = 0.005 # water speed
 
@@ -83,7 +84,11 @@ COLOR_PALETTE = [
 ]
 
 # ======== PLATFORM HELPER FUNCTIONS ========
+
+
+
 def templatePlatforms(z, base_x, base_y, is_bonus=False):
+
     """Spawn a platform with balanced randomness (not too clustered)."""
     size = random.randint(P_MIN_SIZE, P_MAX_SIZE)
 
@@ -589,6 +594,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
     glutInitWindowSize(1000, 800)  # Window size
     glutInitWindowPosition(0, 0)  # Window position
+
     wind = glutCreateWindow(b"Michael Phelps RISING WATER ESCAPE (IMPOSSSIBLEEEEE)")  # Create the window
 
     glutDisplayFunc(showScreen)  # Register display function
