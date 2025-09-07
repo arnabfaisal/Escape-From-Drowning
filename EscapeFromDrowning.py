@@ -42,7 +42,7 @@ NORMAL_COLOR = (1.0, 0.2, 0.2)
 
 score = 0
 best_height = 0
-game_over = False
+game_over = False  #nothing
 max_p = 14            # allow more platforms in pool
 
 on_ground=True
