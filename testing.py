@@ -22,7 +22,7 @@ fpm = False
 #p = player
 px, py, pz, ptheta = 0, 0,50.0,0
 player_velo_z=0.0
-gravity = .15
+gravity = .7
 j_p= 12.0  #player jump speed
 m_s= .5 #player move speed 
 
@@ -31,7 +31,7 @@ p_gap = 90          # avg platform vertical gap
 P_MIN_SIZE = 90     # bigger platforms
 P_MAX_SIZE = 140
 
-SPAWN_XY_RANGE = 140   # how far from origin/platform column to spread
+SPAWN_XY_RANGE = 350   # how far from origin/platform column to spread
 MIN_PLAYER_DIST = 140  # don't spawn too close to player
 
 BONUS_CHANCE = 0.18    # 18% of spawns are bonus
@@ -116,7 +116,6 @@ def init_platforms():
 
     return plats
 
-platforms = init_platforms()
 
 
 ########################### DRAW TEXT #################################
@@ -308,6 +307,8 @@ def keyboardUpListener(key, x, y):
     glutPostRedisplay()
 
 # ======== PLATFORM SUPPORT & SPAWNING (NEW) ========
+
+platforms = init_platforms()
 def platform_top_if_supported(x, y, z):
     """
     Returns (is_supported, plat_index, top_z) if the player is within a platform's X/Y
@@ -322,8 +323,6 @@ def platform_top_if_supported(x, y, z):
             if z >= top - 5.0:  
                 return True, i, top
     return False, -1, 0.0
-
-
 def highest_platform_z():
     return max(p["z"] + p["size"] * 0.5 for p in platforms)
 
@@ -361,6 +360,10 @@ def maybe_spawn_more():
         if random.random() < BONUS_CHANCE * 0.5:
             bonus = make_platform(top, last_x, last_y, is_bonus=True)
             platforms.append(bonus)
+
+
+
+
 
 def changing_position_smoothly():
     global px, py, ptheta, mv_w, mv_s, mv_l, mv_r, mv_sl, mv_sr, m_s
@@ -437,20 +440,20 @@ def mouseListener(button, state, x, y):
         fpm = not fpm
     glutPostRedisplay()
 
+   
 def fpmChanger():
-    # Traditional third-person view
-    distance = 200
-    height = 100
+    x = px + 60*math.cos(math.radians(ptheta))
+    y = py + 60*math.sin(math.radians(ptheta))
+    z = pz
+
+    secondx = x + math.cos(math.radians(ptheta))
+    secondy = y + math.sin(math.radians(ptheta))
+
+    gluLookAt(x, y, z,
+            secondx, secondy, z,
+            0, 0, 1)
     
-    cam_x = px - distance * math.cos(math.radians(ptheta))
-    cam_y = py - distance * math.sin(math.radians(ptheta))
-    cam_z = pz + height
-    
-    # Look directly at player
-    gluLookAt(cam_x, cam_y, cam_z,
-              px, py, pz + 30,  # Look at player's upper body
-              0, 0, 1)
-    
+
 
 cam_x = 0
 cam_y = 0
@@ -539,9 +542,6 @@ def idle():
     maybe_spawn_more()
 
     glutPostRedisplay()
-
-
-
 
 
 
