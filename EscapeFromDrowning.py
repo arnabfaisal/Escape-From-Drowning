@@ -55,7 +55,7 @@ w_accel = 0.00000000002 # just to make the game playable
 score=0
 game_over = False
 max_p = 10   # max platform
-p_gap = 80  #platfrom gap
+p_gap = 100  #platfrom gap
 p_size=80
 platforms = [
     (0, 0, 0, 100),
@@ -257,7 +257,7 @@ def keyboardListener(key, x, y):
     Handles keyboard key presses.
     """
     global mv_w, mv_s, mv_l, mv_r, mv_sl, mv_sr
-    global px, py, ptheta, player_velo_z, pz, on_ground, w_z, w_speed, game_over, w_accel
+    global px, py, ptheta, player_velo_z, pz, on_ground, w_z, w_speed, game_over, w_accel,score
 
     if key == b'w':
         mv_w = True
@@ -284,6 +284,7 @@ def keyboardListener(key, x, y):
         w_s = 0.005
         w_accel = 0.0
         game_over = False
+        score = 0
         global angle_camera, fovY
         angle_camera = 0
         fovY = 120
