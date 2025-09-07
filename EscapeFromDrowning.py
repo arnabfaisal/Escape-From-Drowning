@@ -83,7 +83,7 @@ COLOR_PALETTE = [
 ]
 
 # ======== PLATFORM HELPER FUNCTIONS ========
-def make_platform(z, base_x, base_y, is_bonus=False):
+def templatePlatforms(z, base_x, base_y, is_bonus=False):
     """Spawn a platform with balanced randomness (not too clustered)."""
     size = random.randint(P_MIN_SIZE, P_MAX_SIZE)
 
@@ -103,7 +103,7 @@ def make_platform(z, base_x, base_y, is_bonus=False):
         "bonus": is_bonus, "visited": False, "color": color
     }
 
-def init_platforms():
+def platformInitiallization():
     """Initialize the starting ground and first staircase of platforms."""
     plats = []
     # Big starting ground
@@ -115,7 +115,7 @@ def init_platforms():
     last_x, last_y = 0, 0
     for _ in range(9):
         is_bonus = (random.random() < BONUS_CHANCE)
-        new_plat = make_platform(z, last_x, last_y, is_bonus)
+        new_plat = templatePlatforms(z, last_x, last_y, is_bonus)
         plats.append(new_plat)
 
         # update base for next step (main path always reachable)
@@ -127,7 +127,7 @@ def init_platforms():
 
     return plats
 
-platforms = init_platforms()
+platforms = platformInitiallization()
 
 
 
@@ -350,8 +350,8 @@ def changing_position_smoothly():
         py -= left_y * m_s
 
 
-# ======== PLATFORM SUPPORT & SPAWNING  ========
-def platform_top_if_supported(x, y, z):
+
+def isItOnTop(x, y, z):
     """
     Returns (is_supported, plat_index, top_z) if the player is within a platform's X/Y
     and near its top surface.
@@ -370,7 +370,7 @@ def platform_top_if_supported(x, y, z):
 def highest_platform_z():
     return max(p["z"] + p["size"] * 0.5 for p in platforms)
 
-def prune_old_platforms(water_z):
+def deleteDrownedPlatforms(water_z):
     # remove platforms far below water to keep list short
     keep = []
     cutoff = water_z - 200
@@ -379,7 +379,7 @@ def prune_old_platforms(water_z):
             keep.append(p)
     return keep
 
-def maybe_spawn_more():
+def continuousPlatformGeneration():
     """Spawn platforms with fair gaps and less clustering."""
     global platforms
     top = highest_platform_z()
@@ -393,7 +393,7 @@ def maybe_spawn_more():
         top += min(vertical_gap, max_jump_height)
 
         # Main guaranteed platforms
-        main_plat = make_platform(top, last_x, last_y)
+        main_plat = templatePlatforms(top, last_x, last_y)
         platforms.append(main_plat)
 
         # ALWAYS update base coordinates to prevent clustering
@@ -401,7 +401,7 @@ def maybe_spawn_more():
 
         # Bonus platform (rare & scattered wider)
         if random.random() < BONUS_CHANCE * 0.5:
-            bonus = make_platform(top, last_x, last_y, is_bonus=True)
+            bonus = templatePlatforms(top, last_x, last_y, is_bonus=True)
             platforms.append(bonus)
 
 
@@ -496,7 +496,7 @@ def idle():
     changing_position_smoothly()
 
     # Determine if player is still supported after horizontal move
-    supported, sup_i, sup_top = platform_top_if_supported(px, py, pz)
+    supported, sup_i, sup_top = isItOnTop(px, py, pz)
     if on_ground:
         # If we walked off the platform bounds, start falling
         if not supported or pz > sup_top + 0.5:
@@ -512,7 +512,7 @@ def idle():
         pz += player_velo_z
 
         # Landing check: descending through a top surface within bounds
-        landed, li, ltop = platform_top_if_supported(px, py, old_pz)
+        landed, li, ltop = isItOnTop(px, py, old_pz)
         if landed and old_pz >= ltop and pz <= ltop and player_velo_z <= 0.0:
             pz = ltop
             player_velo_z = 0.0
@@ -539,8 +539,8 @@ def idle():
 
 
     # Spawn / prune platforms over time
-    platforms = prune_old_platforms(w_z)
-    maybe_spawn_more()
+    platforms = deleteDrownedPlatforms(w_z)
+    continuousPlatformGeneration()
 
     glutPostRedisplay()
 
@@ -592,7 +592,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
     glutInitWindowSize(1000, 800)  # Window size
     glutInitWindowPosition(0, 0)  # Window position
-    wind = glutCreateWindow(b"Michael Phelps RISING WATER ESCAPE")  # Create the window
+    wind = glutCreateWindow(b"Michael Phelps RISING WATER ESCAPE (IMPOSSSIBLEEEEE)")  # Create the window
 
     glutDisplayFunc(showScreen)  # Register display function
     glutKeyboardFunc(keyboardListener)  # Register keyboard listener

@@ -70,7 +70,17 @@ platforms = [
     (random.uniform(-100, 100), random.uniform(-100, 100), 720, p_size),
 ]
 
-
+COLOR_PALETTE = [
+    (1.0, 0.2, 0.2),   # Red
+    (0.2, 0.8, 0.2),   # Green
+    (0.2, 0.2, 1.0),   # Blue
+    (0.8, 0.2, 1.0),   # Purple
+    (0.2, 1.0, 0.8),   # Teal
+    (1.0, 0.5, 0.0),   # Orange
+    (0.5, 0.5, 0.5),   # Gray
+    (0.8, 0.6, 0.4),   # Tan
+    (0.4, 0.8, 0.6)    # Mint
+]
 
 # ======== PLATFORM HELPER FUNCTIONS ========
 def make_platform(z, base_x, base_y, is_bonus=False):
@@ -86,7 +96,7 @@ def make_platform(z, base_x, base_y, is_bonus=False):
     if is_bonus:
         color = BONUS_COLOR
     else:
-        color = (random.random(), random.random(), random.random())
+        color = random.choice(COLOR_PALETTE) 
 
     return {
         "x": x, "y": y, "z": z, "size": size,
@@ -348,15 +358,14 @@ def platform_top_if_supported(x, y, z):
     """
     for i, p in enumerate(platforms):
         half = p["size"] * 0.5
-        # Check if player is within platform bounds in X and Y
         if (p["x"] - half <= x <= p["x"] + half and
             p["y"] - half <= y <= p["y"] + half):
             top = p["z"] + half
-            # Allow support if player is above the platform or falling through it
-            # Use a more generous threshold for support detection
-            if z >= top - 15.0:  # Increased from 5.0 to 15.0
+            # Only allow support if player is above or slightly below top
+            if z >= top - 5.0:  
                 return True, i, top
     return False, -1, 0.0
+
 
 def highest_platform_z():
     return max(p["z"] + p["size"] * 0.5 for p in platforms)
@@ -488,10 +497,9 @@ def idle():
 
     # Determine if player is still supported after horizontal move
     supported, sup_i, sup_top = platform_top_if_supported(px, py, pz)
-    
     if on_ground:
         # If we walked off the platform bounds, start falling
-        if not supported or pz > sup_top + 2.0:  # Added small tolerance
+        if not supported or pz > sup_top + 0.5:
             on_ground = False
         else:
             # stay glued to top
@@ -503,9 +511,9 @@ def idle():
         player_velo_z -= gravity
         pz += player_velo_z
 
-        # Landing check: check if we're now below a platform we were above before
-        landed, li, ltop = platform_top_if_supported(px, py, pz)
-        if landed and old_pz >= ltop and pz <= ltop + 10.0 and player_velo_z <= 0.0:
+        # Landing check: descending through a top surface within bounds
+        landed, li, ltop = platform_top_if_supported(px, py, old_pz)
+        if landed and old_pz >= ltop and pz <= ltop and player_velo_z <= 0.0:
             pz = ltop
             player_velo_z = 0.0
             on_ground = True
@@ -529,8 +537,6 @@ def idle():
     if pz <= w_z:
         game_over = True
 
-    # Height best for HUD
-    best_height = max(best_height, int(math.ceil(pz)))
 
     # Spawn / prune platforms over time
     platforms = prune_old_platforms(w_z)
